@@ -35,9 +35,13 @@ df.show(truncate=False)
 ## Writing file in hadoop
 df.write.csv("record.csv")
 
-
-
-
+## Copy data files Employee.csv, Department.csv to HDFS (OPEN NEW TERMINAL)
+# create a folder to insert data files
+hdfs dfs -mkdir /input_data
+hdfs dfs -put departments.csv /input_data
+hdfs dfs -put employees.csv /input_data
+## to check data available
+hdfs dfs -ls /input_data
 
 
 

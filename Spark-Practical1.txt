@@ -43,8 +43,387 @@ hdfs dfs -put employees.csv /input_data
 ## to check data available
 hdfs dfs -ls /input_data
 
+## Read data file from hdfs
+df1 = spark.read.option("header", True).csv("/input_data/departments.csv")
+
+## Printing Data
+df1.printSchema()
+root
+ |-- DEPARTMENT_ID: string (nullable = true)
+ |-- DEPARTMENT_NAME: string (nullable = true)
+ |-- MANAGER_ID: string (nullable = true)
+ |-- LOCATION_ID: string (nullable = true)
+
+## 
+df1.show()
++-------------+--------------------+----------+-----------+
+|DEPARTMENT_ID|     DEPARTMENT_NAME|MANAGER_ID|LOCATION_ID|
++-------------+--------------------+----------+-----------+
+|           10|      Administration|       200|       1700|
+|           20|           Marketing|       201|       1800|
+|           30|          Purchasing|       114|       1700|
+|           40|     Human Resources|       203|       2400|
+|           50|            Shipping|       121|       1500|
+|           60|                  IT|       103|       1400|
+|           70|    Public Relations|       204|       2700|
+|           80|               Sales|       145|       2500|
+|           90|           Executive|       100|       1700|
+|          100|             Finance|       108|       1700|
+|          110|          Accounting|       205|       1700|
+|          120|            Treasury|        - |       1700|
+|          130|       Corporate Tax|        - |       1700|
+|          140|  Control And Credit|        - |       1700|
+|          150|Shareholder Services|        - |       1700|
+|          160|            Benefits|        - |       1700|
+|          170|       Manufacturing|        - |       1700|
+|          180|        Construction|        - |       1700|
+|          190|         Contracting|        - |       1700|
+|          200|          Operations|        - |       1700|
++-------------+--------------------+----------+-----------+
+only showing top 20 rows
+
+df1 = spark.read.option("header",True).option("inferSchema",True).csv("/input_data/departments.csv")
+df1.printSchema()
+root
+ |-- DEPARTMENT_ID: integer (nullable = true)
+ |-- DEPARTMENT_NAME: string (nullable = true)
+ |-- MANAGER_ID: string (nullable = true)
+ |-- LOCATION_ID: integer (nullable = true)
+
+df2 = spark.read.option("header", True).option("inferSchema", True).csv("/input_data/employees.csv")
+>>> df2.printSchema()
+root
+ |-- EMPLOYEE_ID: integer (nullable = true)
+ |-- FIRST_NAME: string (nullable = true)
+ |-- LAST_NAME: string (nullable = true)
+ |-- EMAIL: string (nullable = true)
+ |-- PHONE_NUMBER: string (nullable = true)
+ |-- HIRE_DATE: string (nullable = true)
+ |-- JOB_ID: string (nullable = true)
+ |-- SALARY: integer (nullable = true)
+ |-- COMMISSION_PCT: string (nullable = true)
+ |-- MANAGER_ID: string (nullable = true)
+ |-- DEPARTMENT_ID: integer (nullable = true)
+
+>>> df2.show()
++-----------+----------+---------+--------+------------+---------+----------+------+--------------+----------+-------------+
+|EMPLOYEE_ID|FIRST_NAME|LAST_NAME|   EMAIL|PHONE_NUMBER|HIRE_DATE|    JOB_ID|SALARY|COMMISSION_PCT|MANAGER_ID|DEPARTMENT_ID|
++-----------+----------+---------+--------+------------+---------+----------+------+--------------+----------+-------------+
+|        198|    Donald| OConnell|DOCONNEL|650.507.9833|21-JUN-07|  SH_CLERK|  2600|            - |       124|           50|
+|        199|   Douglas|    Grant|  DGRANT|650.507.9844|13-JAN-08|  SH_CLERK|  2600|            - |       124|           50|
+|        200|  Jennifer|   Whalen| JWHALEN|515.123.4444|17-SEP-03|   AD_ASST|  4400|            - |       101|           10|
+|        201|   Michael|Hartstein|MHARTSTE|515.123.5555|17-FEB-04|    MK_MAN| 13000|            - |       100|           20|
+|        202|       Pat|      Fay|    PFAY|603.123.6666|17-AUG-05|    MK_REP|  6000|            - |       201|           20|
++-----------+----------+---------+--------+------------+---------+----------+------+--------------+----------+-------------+
+only showing top 20 rows
+
+## Working On SELECT statements
+
+>>> df2.select("*").show()
+
+|EMPLOYEE_ID|FIRST_NAME|LAST_NAME|   EMAIL|PHONE_NUMBER|HIRE_DATE|    JOB_ID|SALARY|COMMISSION_PCT|MANAGER_ID|DEPARTMENT_ID|
++-----------+----------+---------+--------+------------+---------+----------+------+--------------+----------+-------------+
+|        198|    Donald| OConnell|DOCONNEL|650.507.9833|21-JUN-07|  SH_CLERK|  2600|            - |       124|           50|
+|        199|   Douglas|    Grant|  DGRANT|650.507.9844|13-JAN-08|  SH_CLERK|  2600|            - |       124|           50|
+|        200|  Jennifer|   Whalen| JWHALEN|515.123.4444|17-SEP-03|   AD_ASST|  4400|            - |       101|           10|
+|        201|   Michael|Hartstein|MHARTSTE|515.123.5555|17-FEB-04|    MK_MAN| 13000|            - |       100|           20|
+|        202|       Pat|      Fay|    PFAY|603.123.6666|17-AUG-05|    MK_REP|  6000|            - |       201|           20|
+|        110|      John|     Chen|   JCHEN|515.124.4269|28-SEP-05|FI_ACCOUNT|  8200|            - |       108|          100|
++-----------+----------+---------+--------+------------+---------+----------+------+--------------+----------+-------------+
+only showing top 20 rows
+
+## Method-1 for select statements
+>>> df2.select("employee_id", "first_name").show()
++-----------+----------+
+|employee_id|first_name|
++-----------+----------+
+|        198|    Donald|
+|        199|   Douglas|
+|        200|  Jennifer|
++-----------+----------+
+only showing top 20 rows
+
+## Method-2 for select statements
+>>> df2.select(df2.employee_id, df2.first_name).show()
+Traceback (most recent call last):
+  File "<stdin>", line 1, in <module>
+  File "/usr/local/spark/python/pyspark/sql/dataframe.py", line 1659, in __getattr__
+    raise AttributeError(
+AttributeError: 'DataFrame' object has no attribute 'employee_id'
+
+## Method-3 for select statements
+>>> df2.select(df2["employee_id"], df2["first_name"]).show()
++-----------+----------+
+|employee_id|first_name|
++-----------+----------+
+|        198|    Donald|
+|        199|   Douglas|
+|        200|  Jennifer|
++-----------+----------+
+only showing top 20 rows
+
+## Importing COL Function
+
+>>> from pyspark.sql.functions import col
+>>> df2.select(col("employee_id"), col("first_name")).show()
++-----------+----------+
+|employee_id|first_name|
++-----------+----------+
+|        198|    Donald|
+|        199|   Douglas|
+|        200|  Jennifer|
+|        201|   Michael|
++-----------+----------+
+only showing top 20 rows
+
+>>> df2.select(col("employee_id").alias("EMP_ID"), col("first_name").alias("F_NAME")).show()
++------+---------+
+|EMP_ID|   F_NAME|
++------+---------+
+|   198|   Donald|
+|   199|  Douglas|
+|   200| Jennifer|
+|   201|  Michael|
++------+---------+
+only showing top 20 rows
+
+## ADding NEW COLUMNS
+
+>>> df2.select("employee_id", "first_name", "salary").withColumn("NEW_SAL",col("salary")+1000).show()
++-----------+----------+------+-------+
+|employee_id|first_name|salary|NEW_SAL|
++-----------+----------+------+-------+
+|        198|    Donald|  2600|   3600|
+|        199|   Douglas|  2600|   3600|
+|        200|  Jennifer|  4400|   5400|
+|        201|   Michael| 13000|  14000|
++-----------+----------+------+-------+
+only showing top 20 rows
+
+>>> 
+>>> df2.withColumn("New_salary", col("salary")+1000).select("employee_id","salary").show()
++-----------+------+
+|employee_id|salary|
++-----------+------+
+|        198|  2600|
+|        199|  2600|
+|        200|  4400|
+|        201| 13000|
++-----------+------+
+only showing top 20 rows
+
+>>> df2.withColumn("New_salary", col("salary")+1000).select("employee_id","salary", "new_salary").show()
++-----------+------+----------+
+|employee_id|salary|new_salary|
++-----------+------+----------+
+|        198|  2600|      3600|
+|        199|  2600|      3600|
+|        200|  4400|      5400|
++-----------+------+----------+
+only showing top 20 rows
+
+>>> df2.withColumn("salary", col("salary")-1000).select("employee_id","salary").show()
++-----------+------+
+|employee_id|salary|
++-----------+------+
+|        198|  1600|
+|        199|  1600|
+|        200|  3400|
+|        201| 12000|
++-----------+------+
+only showing top 20 rows
+
+## RENAMING THE COLUMNS
+
+>>> df2.withColumnRenamed("salary", "new_sal").show()
++-----------+----------+---------+--------+------------+---------+----------+-------+--------------+----------+-------------+
+|EMPLOYEE_ID|FIRST_NAME|LAST_NAME|   EMAIL|PHONE_NUMBER|HIRE_DATE|    JOB_ID|new_sal|COMMISSION_PCT|MANAGER_ID|DEPARTMENT_ID|
++-----------+----------+---------+--------+------------+---------+----------+-------+--------------+----------+-------------+
+|        198|    Donald| OConnell|DOCONNEL|650.507.9833|21-JUN-07|  SH_CLERK|   2600|            - |       124|           50|
+|        199|   Douglas|    Grant|  DGRANT|650.507.9844|13-JAN-08|  SH_CLERK|   2600|            - |       124|           50|
+|        200|  Jennifer|   Whalen| JWHALEN|515.123.4444|17-SEP-03|   AD_ASST|   4400|            - |       101|           10|
++-----------+----------+---------+--------+------------+---------+----------+-------+--------------+----------+-------------+
+only showing top 20 rows
+
+## RENAMING MULTI-COLUMNS
+
+>>> df2.withColumnRenamed("employee_id", "id").withColumnRenamed("phone_number", "cell_number").show()
++---+----------+---------+--------+------------+---------+----------+------+--------------+----------+-------------+
+| id|FIRST_NAME|LAST_NAME|   EMAIL| cell_number|HIRE_DATE|    JOB_ID|SALARY|COMMISSION_PCT|MANAGER_ID|DEPARTMENT_ID|
++---+----------+---------+--------+------------+---------+----------+------+--------------+----------+-------------+
+|198|    Donald| OConnell|DOCONNEL|650.507.9833|21-JUN-07|  SH_CLERK|  2600|            - |       124|           50|
+|199|   Douglas|    Grant|  DGRANT|650.507.9844|13-JAN-08|  SH_CLERK|  2600|            - |       124|           50|
+|200|  Jennifer|   Whalen| JWHALEN|515.123.4444|17-SEP-03|   AD_ASST|  4400|            - |       101|           10|
++---+----------+---------+--------+------------+---------+----------+------+--------------+----------+-------------+
+only showing top 20 rows
+
+## DROPING THE COLUMNS (SINGLE)
+
+>>> df2.drop("last_name").show()
++-----------+----------+--------+------------+---------+----------+------+--------------+----------+-------------+
+|EMPLOYEE_ID|FIRST_NAME|   EMAIL|PHONE_NUMBER|HIRE_DATE|    JOB_ID|SALARY|COMMISSION_PCT|MANAGER_ID|DEPARTMENT_ID|
++-----------+----------+--------+------------+---------+----------+------+--------------+----------+-------------+
+|        198|    Donald|DOCONNEL|650.507.9833|21-JUN-07|  SH_CLERK|  2600|            - |       124|           50|
+|        199|   Douglas|  DGRANT|650.507.9844|13-JAN-08|  SH_CLERK|  2600|            - |       124|           50|
+|        200|  Jennifer| JWHALEN|515.123.4444|17-SEP-03|   AD_ASST|  4400|            - |       101|           10|
++-----------+----------+--------+------------+---------+----------+------+--------------+----------+-------------+
+only showing top 20 rows
+
+## DROPPING MULTI COLUMNS
+>>> df2.drop("last_name", "email", "commission_pct").show()
++-----------+----------+------------+---------+----------+------+----------+-------------+
+|EMPLOYEE_ID|FIRST_NAME|PHONE_NUMBER|HIRE_DATE|    JOB_ID|SALARY|MANAGER_ID|DEPARTMENT_ID|
++-----------+----------+------------+---------+----------+------+----------+-------------+
+|        198|    Donald|650.507.9833|21-JUN-07|  SH_CLERK|  2600|       124|           50|
+|        199|   Douglas|650.507.9844|13-JAN-08|  SH_CLERK|  2600|       124|           50|
+|        200|  Jennifer|515.123.4444|17-SEP-03|   AD_ASST|  4400|       101|           10|
+|        201|   Michael|515.123.5555|17-FEB-04|    MK_MAN| 13000|       100|           20|
+|        202|       Pat|603.123.6666|17-AUG-05|    MK_REP|  6000|       201|           20|
+|        203|     Susan|515.123.7777|07-JUN-02|    HR_REP|  6500|       101|           40|
+|        204|   Hermann|515.123.8888|07-JUN-02|    PR_REP| 10000|       101|           70|
++-----------+----------+------------+---------+----------+------+----------+-------------+
+only showing top 20 rows
 
 
+## FILTERING SINGLE COLUMN
+
+>>> df2.filter(col("salary") < 5000).select("employee_id", "salary").show()
++-----------+------+
+|employee_id|salary|
++-----------+------+
+|        198|  2600|
+|        199|  2600|
+|        200|  4400|
+|        105|  4800|
+|        106|  4800|
+|        107|  4200|
+|        115|  3100|
+only showing top 20 rows
+
+## FILTERING ON MULTI COLUMNS USING & OPERATOR
+
+>>> df2.filter((col("department_id") == 50) & (col("salary") < 5000)).select("employee_id", "salary", "department_id").show(5)
++-----------+------+-------------+
+|employee_id|salary|department_id|
++-----------+------+-------------+
+|        198|  2600|           50|
+|        199|  2600|           50|
+|        125|  3200|           50|
+|        126|  2700|           50|
+|        127|  2400|           50|
++-----------+------+-------------+
+only showing top 5 rows
+
+## FILTERING
+## Working like SQL
+
+>>> df2.filter("department_id <> 50").select("employee_id", "salary", "department_id").show(5)
++-----------+------+-------------+
+|employee_id|salary|department_id|
++-----------+------+-------------+
+|        200|  4400|           10|
+|        201| 13000|           20|
+|        202|  6000|           20|
+|        203|  6500|           40|
+|        204| 10000|           70|
++-----------+------+-------------+
+only showing top 5 rows
+
+>>> df2.filter("department_id <> 50 and salary < 5000").select("employee_id", "salary", "department_id").show(5)
++-----------+------+-------------+
+|employee_id|salary|department_id|
++-----------+------+-------------+
+|        200|  4400|           10|
+|        105|  4800|           60|
+|        106|  4800|           60|
+|        107|  4200|           60|
+|        115|  3100|           30|
++-----------+------+-------------+
+only showing top 5 rows
+
+## REMOVING DUPLICATES
+
+>>> df2.distinct().show(10)
++-----------+----------+---------+--------+------------+---------+----------+------+--------------+----------+-------------+
+|EMPLOYEE_ID|FIRST_NAME|LAST_NAME|   EMAIL|PHONE_NUMBER|HIRE_DATE|    JOB_ID|SALARY|COMMISSION_PCT|MANAGER_ID|DEPARTMENT_ID|
++-----------+----------+---------+--------+------------+---------+----------+------+--------------+----------+-------------+
+|        120|   Matthew|    Weiss|  MWEISS|650.123.1234|18-JUL-04|    ST_MAN|  8000|            - |       100|           50|
+|        118|       Guy|   Himuro| GHIMURO|515.127.4565|15-NOV-06|  PU_CLERK|  2600|            - |       114|           30|
+|        110|      John|     Chen|   JCHEN|515.124.4269|28-SEP-05|FI_ACCOUNT|  8200|            - |       108|          100|
+|        123|    Shanta|  Vollman|SVOLLMAN|650.123.4234|10-OCT-05|    ST_MAN|  6500|            - |       100|           50|
+|        124|     Kevin|  Mourgos|KMOURGOS|650.123.5234|16-NOV-07|    ST_MAN|  5800|            - |       100|           50|
+|        137|    Renske|   Ladwig| RLADWIG|650.121.1234|14-JUL-03|  ST_CLERK|  3600|            - |       123|           50|
+|        132|        TJ|    Olson| TJOLSON|650.124.8234|10-APR-07|  ST_CLERK|  2100|            - |       121|           50|
+|        113|      Luis|     Popp|   LPOPP|515.124.4567|07-DEC-07|FI_ACCOUNT|  6900|            - |       108|          100|
+|        139|      John|      Seo|    JSEO|650.121.2019|12-FEB-06|  ST_CLERK|  2700|            - |       123|           50|
+|        201|   Michael|Hartstein|MHARTSTE|515.123.5555|17-FEB-04|    MK_MAN| 13000|            - |       100|           20|
++-----------+----------+---------+--------+------------+---------+----------+------+--------------+----------+-------------+
+only showing top 10 rows
+
+>>> df2.dropDuplicates().show(10)
++-----------+----------+---------+--------+------------+---------+----------+------+--------------+----------+-------------+
+|EMPLOYEE_ID|FIRST_NAME|LAST_NAME|   EMAIL|PHONE_NUMBER|HIRE_DATE|    JOB_ID|SALARY|COMMISSION_PCT|MANAGER_ID|DEPARTMENT_ID|
++-----------+----------+---------+--------+------------+---------+----------+------+--------------+----------+-------------+
+|        120|   Matthew|    Weiss|  MWEISS|650.123.1234|18-JUL-04|    ST_MAN|  8000|            - |       100|           50|
+|        118|       Guy|   Himuro| GHIMURO|515.127.4565|15-NOV-06|  PU_CLERK|  2600|            - |       114|           30|
+|        110|      John|     Chen|   JCHEN|515.124.4269|28-SEP-05|FI_ACCOUNT|  8200|            - |       108|          100|
+|        123|    Shanta|  Vollman|SVOLLMAN|650.123.4234|10-OCT-05|    ST_MAN|  6500|            - |       100|           50|
+|        124|     Kevin|  Mourgos|KMOURGOS|650.123.5234|16-NOV-07|    ST_MAN|  5800|            - |       100|           50|
+|        137|    Renske|   Ladwig| RLADWIG|650.121.1234|14-JUL-03|  ST_CLERK|  3600|            - |       123|           50|
+|        132|        TJ|    Olson| TJOLSON|650.124.8234|10-APR-07|  ST_CLERK|  2100|            - |       121|           50|
+|        113|      Luis|     Popp|   LPOPP|515.124.4567|07-DEC-07|FI_ACCOUNT|  6900|            - |       108|          100|
+|        139|      John|      Seo|    JSEO|650.121.2019|12-FEB-06|  ST_CLERK|  2700|            - |       123|           50|
+|        201|   Michael|Hartstein|MHARTSTE|515.123.5555|17-FEB-04|    MK_MAN| 13000|            - |       100|           20|
++-----------+----------+---------+--------+------------+---------+----------+------+--------------+----------+-------------+
+only showing top 10 rows
+
+>>> df2.show()
++-----------+----------+---------+--------+------------+---------+----------+------+--------------+----------+-------------+
+|EMPLOYEE_ID|FIRST_NAME|LAST_NAME|   EMAIL|PHONE_NUMBER|HIRE_DATE|    JOB_ID|SALARY|COMMISSION_PCT|MANAGER_ID|DEPARTMENT_ID|
++-----------+----------+---------+--------+------------+---------+----------+------+--------------+----------+-------------+
+|        198|    Donald| OConnell|DOCONNEL|650.507.9833|21-JUN-07|  SH_CLERK|  2600|            - |       124|           50|
+|        199|   Douglas|    Grant|  DGRANT|650.507.9844|13-JAN-08|  SH_CLERK|  2600|            - |       124|           50|
+|        200|  Jennifer|   Whalen| JWHALEN|515.123.4444|17-SEP-03|   AD_ASST|  4400|            - |       101|           10|
+|        201|   Michael|Hartstein|MHARTSTE|515.123.5555|17-FEB-04|    MK_MAN| 13000|            - |       100|           20|
+|        202|       Pat|      Fay|    PFAY|603.123.6666|17-AUG-05|    MK_REP|  6000|            - |       201|           20|
+|        203|     Susan|   Mavris| SMAVRIS|515.123.7777|07-JUN-02|    HR_REP|  6500|            - |       101|           40|
+|        204|   Hermann|     Baer|   HBAER|515.123.8888|07-JUN-02|    PR_REP| 10000|            - |       101|           70|
+|        205|   Shelley|  Higgins|SHIGGINS|515.123.8080|07-JUN-02|    AC_MGR| 12008|            - |       101|          110|
+|        206|   William|    Gietz|  WGIETZ|515.123.8181|07-JUN-02|AC_ACCOUNT|  8300|            - |       205|          110|
+|        100|    Steven|     King|   SKING|515.123.4567|17-JUN-03|   AD_PRES| 24000|            - |        - |           90|
+|        101|     Neena|  Kochhar|NKOCHHAR|515.123.4568|21-SEP-05|     AD_VP| 17000|            - |       100|           90|
+|        102|       Lex|  De Haan| LDEHAAN|515.123.4569|13-JAN-01|     AD_VP| 17000|            - |       100|           90|
+|        103| Alexander|   Hunold| AHUNOLD|590.423.4567|03-JAN-06|   IT_PROG|  9000|            - |       102|           60|
+|        104|     Bruce|    Ernst|  BERNST|590.423.4568|21-MAY-07|   IT_PROG|  6000|            - |       103|           60|
+|        105|     David|   Austin| DAUSTIN|590.423.4569|25-JUN-05|   IT_PROG|  4800|            - |       103|           60|
+|        106|     Valli|Pataballa|VPATABAL|590.423.4560|05-FEB-06|   IT_PROG|  4800|            - |       103|           60|
+|        107|     Diana|  Lorentz|DLORENTZ|590.423.5567|07-FEB-07|   IT_PROG|  4200|            - |       103|           60|
+|        108|     Nancy|Greenberg|NGREENBE|515.124.4569|17-AUG-02|    FI_MGR| 12008|            - |       101|          100|
+|        109|    Daniel|   Faviet| DFAVIET|515.124.4169|16-AUG-02|FI_ACCOUNT|  9000|            - |       108|          100|
+|        110|      John|     Chen|   JCHEN|515.124.4269|28-SEP-05|FI_ACCOUNT|  8200|            - |       108|          100|
++-----------+----------+---------+--------+------------+---------+----------+------+--------------+----------+-------------+
+only showing top 20 rows
 
 
-
+>>> df2.dropDuplicates(["job_id", "department_id"]).select("employee_id", "job_id", "department_id").show()
++-----------+----------+-------------+
+|employee_id|    job_id|department_id|
++-----------+----------+-------------+
+|        109|FI_ACCOUNT|          100|
+|        125|  ST_CLERK|           50|
+|        101|     AD_VP|           90|
+|        198|  SH_CLERK|           50|
+|        114|    PU_MAN|           30|
+|        204|    PR_REP|           70|
+|        205|    AC_MGR|          110|
+|        100|   AD_PRES|           90|
+|        203|    HR_REP|           40|
+|        103|   IT_PROG|           60|
+|        120|    ST_MAN|           50|
+|        201|    MK_MAN|           20|
+|        200|   AD_ASST|           10|
+|        108|    FI_MGR|          100|
+|        115|  PU_CLERK|           30|
+|        206|AC_ACCOUNT|          110|
+|        202|    MK_REP|           20|
++-----------+----------+-------------+

@@ -1,1 +1,334 @@
+>>> pyspark
+>>> from pyspark.sql.functions import * 
+>>> empdf = spark.read.option("header", True).option("inferSchema", True).csv("/data/employees.csv")
+>>> deptdf = spark.read.option("header", True).option("inferSchema", True).csv("/data/departments.csv")
+>>> empdf.show()
+
+
+## Working on Aggregating Functoins
+
+>>> empdf.count()
+50
+
+>>> empdf.select(max("salary").alias("max_salary")).show()
++----------+
+|max_salary|
++----------+
+|     24000|
++----------+
+
+>>> empdf.select(min("salary").alias("max_salary")).show()
++----------+
+|max_salary|
++----------+
+|      2100|
++----------+
+
+>>> empdf.select(sum("salary").alias("total_salary")).show()
++------------+
+|total_salary|
++------------+
+|      309116|
++------------+
+
+### ORDERBY CLAUSE
+>>> empdf.select("employee_id", "first_name", "job_id", "salary").orderBy("employee_id").show()
++-----------+-----------+----------+------+
+|employee_id| first_name|    job_id|salary|
++-----------+-----------+----------+------+
+|        100|     Steven|   AD_PRES| 24000|
+|        101|      Neena|     AD_VP| 17000|
+|        102|        Lex|     AD_VP| 17000|
+|        103|  Alexander|   IT_PROG|  9000|
+|        104|      Bruce|   IT_PROG|  6000|
+|        105|      David|   IT_PROG|  4800|
+|        106|      Valli|   IT_PROG|  4800|
+|        107|      Diana|   IT_PROG|  4200|
+|        108|      Nancy|    FI_MGR| 12008|
+|        109|     Daniel|FI_ACCOUNT|  9000|
+|        110|       John|FI_ACCOUNT|  8200|
+|        111|     Ismael|FI_ACCOUNT|  7700|
+|        112|Jose Manuel|FI_ACCOUNT|  7800|
+|        113|       Luis|FI_ACCOUNT|  6900|
+|        114|        Den|    PU_MAN| 11000|
+|        115|  Alexander|  PU_CLERK|  3100|
+|        116|     Shelli|  PU_CLERK|  2900|
+|        117|      Sigal|  PU_CLERK|  2800|
+|        118|        Guy|  PU_CLERK|  2600|
+|        119|      Karen|  PU_CLERK|  2500|
++-----------+-----------+----------+------+
+only showing top 20 rows
+
+>>> empdf.select("employee_id", "first_name", "job_id", "salary", "department_id").orderBy(col("department_id").asc(),col("employee_id").desc()).show()
++-----------+----------+--------+------+-------------+
+|employee_id|first_name|  job_id|salary|department_id|
++-----------+----------+--------+------+-------------+
+|        200|  Jennifer| AD_ASST|  4400|           10|
+|        202|       Pat|  MK_REP|  6000|           20|
+|        201|   Michael|  MK_MAN| 13000|           20|
+|        119|     Karen|PU_CLERK|  2500|           30|
+|        118|       Guy|PU_CLERK|  2600|           30|
+|        117|     Sigal|PU_CLERK|  2800|           30|
+|        116|    Shelli|PU_CLERK|  2900|           30|
+|        115| Alexander|PU_CLERK|  3100|           30|
+|        114|       Den|  PU_MAN| 11000|           30|
+|        203|     Susan|  HR_REP|  6500|           40|
+|        199|   Douglas|SH_CLERK|  2600|           50|
+|        198|    Donald|SH_CLERK|  2600|           50|
+|        140|    Joshua|ST_CLERK|  2500|           50|
+|        139|      John|ST_CLERK|  2700|           50|
+|        138|   Stephen|ST_CLERK|  3200|           50|
+|        137|    Renske|ST_CLERK|  3600|           50|
+|        136|     Hazel|ST_CLERK|  2200|           50|
+|        135|        Ki|ST_CLERK|  2400|           50|
+|        134|   Michael|ST_CLERK|  2900|           50|
+|        133|     Jason|ST_CLERK|  3300|           50|
++-----------+----------+--------+------+-------------+
+only showing top 20 rows
+
+### GROUPBY
+>>> empdf.groupBy("department_id").sum("salary").show()
++-------------+-----------+
+|department_id|sum(salary)|
++-------------+-----------+
+|           20|      19000|
+|           40|       6500|
+|          100|      51608|
+|           10|       4400|
+|           50|      85600|
+|           70|      10000|
+|           90|      58000|
+|           60|      28800|
+|          110|      20308|
+|           30|      24900|
++-------------+-----------+
+
+>>> empdf.groupBy("department_id").max("salary").show()
++-------------+-----------+
+|department_id|max(salary)|
++-------------+-----------+
+|           20|      13000|
+|           40|       6500|
+|          100|      12008|
+|           10|       4400|
+|           50|       8200|
+|           70|      10000|
+|           90|      24000|
+|           60|       9000|
+|          110|      12008|
+|           30|      11000|
++-------------+-----------+
+
+>>> empdf.groupBy("department_id").min("salary").show()
++-------------+-----------+
+|department_id|min(salary)|
++-------------+-----------+
+|           20|       6000|
+|           40|       6500|
+|          100|       6900|
+|           10|       4400|
+|           50|       2100|
+|           70|      10000|
+|           90|      17000|
+|           60|       4200|
+|          110|       8300|
+|           30|       2500|
++-------------+-----------+
+
+ ### GROUPBY METHOD-2
+ ## we can modify column names
+ 
+ >>> empdf.groupBy("department_id").agg(sum("salary").alias("sum_sal"), max("salary").alias("max_sal"), min("salary").alias("min_sal")).show()
++-------------+-------+-------+-------+
+|department_id|sum_sal|max_sal|min_sal|
++-------------+-------+-------+-------+
+|           20|  19000|  13000|   6000|
+|           40|   6500|   6500|   6500|
+|          100|  51608|  12008|   6900|
+|           10|   4400|   4400|   4400|
+|           50|  85600|   8200|   2100|
+|           70|  10000|  10000|  10000|
+|           90|  58000|  24000|  17000|
+|           60|  28800|   9000|   4200|
+|          110|  20308|  12008|   8300|
+|           30|  24900|  11000|   2500|
++-------------+-------+-------+-------+
+
+## WHERE CLAUSE
+
+>>> empdf.groupBy("department_id").agg(sum("salary").alias("sum_sal"), max("salary").alias("max_sal"), min("salary").alias("min_sal")).where(col("max_sal")>=10000).show()
++-------------+-------+-------+-------+
+|department_id|sum_sal|max_sal|min_sal|
++-------------+-------+-------+-------+
+|           20|  19000|  13000|   6000|
+|          100|  51608|  12008|   6900|
+|           70|  10000|  10000|  10000|
+|           90|  58000|  24000|  17000|
+|          110|  20308|  12008|   8300|
+|           30|  24900|  11000|   2500|
++-------------+-------+-------+-------+
+
+>> empdf.groupBy("department_id").agg(sum("salary").alias("sum_sal"), max("salary").alias("max_sal"), min("salary").alias("min_sal")).where(col("max_sal")>=10000).orderBy(col("department_id").asc()).show()
++-------------+-------+-------+-------+
+|department_id|sum_sal|max_sal|min_sal|
++-------------+-------+-------+-------+
+|           20|  19000|  13000|   6000|
+|           30|  24900|  11000|   2500|
+|           70|  10000|  10000|  10000|
+|           90|  58000|  24000|  17000|
+|          100|  51608|  12008|   6900|
+|          110|  20308|  12008|   8300|
++-------------+-------+-------+-------+
+
+>>> empdf.groupBy("department_id").agg(sum("salary").alias("sum_sal")).where(col("sum_sal")>=15000).show()
++-------------+-------+
+|department_id|sum_sal|
++-------------+-------+
+|           20|  19000|
+|          100|  51608|
+|           50|  85600|
+|           90|  58000|
+|           60|  28800|
+|          110|  20308|
+|           30|  24900|
++-------------+-------+
+
+### CASE WHEN STATEMENTS
+
+>>> empdf.withColumn("emp_grade", when(col("salary")>=15000, "A").when((col("salary")>=10000) & (col("salary")<15000), "B").otherwise ("C")).show()
++-----------+----------+---------+--------+------------+---------+----------+------+--------------+----------+-------------+---------+
+|EMPLOYEE_ID|FIRST_NAME|LAST_NAME|   EMAIL|PHONE_NUMBER|HIRE_DATE|    JOB_ID|SALARY|COMMISSION_PCT|MANAGER_ID|DEPARTMENT_ID|emp_grade|
++-----------+----------+---------+--------+------------+---------+----------+------+--------------+----------+-------------+---------+
+|        198|    Donald| OConnell|DOCONNEL|650.507.9833|21-JUN-07|  SH_CLERK|  2600|            - |       124|           50|        C|
+|        199|   Douglas|    Grant|  DGRANT|650.507.9844|13-JAN-08|  SH_CLERK|  2600|            - |       124|           50|        C|
+|        200|  Jennifer|   Whalen| JWHALEN|515.123.4444|17-SEP-03|   AD_ASST|  4400|            - |       101|           10|        C|
+|        201|   Michael|Hartstein|MHARTSTE|515.123.5555|17-FEB-04|    MK_MAN| 13000|            - |       100|           20|        B|
+|        202|       Pat|      Fay|    PFAY|603.123.6666|17-AUG-05|    MK_REP|  6000|            - |       201|           20|        C|
+|        203|     Susan|   Mavris| SMAVRIS|515.123.7777|07-JUN-02|    HR_REP|  6500|            - |       101|           40|        C|
+|        204|   Hermann|     Baer|   HBAER|515.123.8888|07-JUN-02|    PR_REP| 10000|            - |       101|           70|        B|
+|        205|   Shelley|  Higgins|SHIGGINS|515.123.8080|07-JUN-02|    AC_MGR| 12008|            - |       101|          110|        B|
+|        206|   William|    Gietz|  WGIETZ|515.123.8181|07-JUN-02|AC_ACCOUNT|  8300|            - |       205|          110|        C|
+|        100|    Steven|     King|   SKING|515.123.4567|17-JUN-03|   AD_PRES| 24000|            - |        - |           90|        A|
+|        101|     Neena|  Kochhar|NKOCHHAR|515.123.4568|21-SEP-05|     AD_VP| 17000|            - |       100|           90|        A|
+|        102|       Lex|  De Haan| LDEHAAN|515.123.4569|13-JAN-01|     AD_VP| 17000|            - |       100|           90|        A|
+|        103| Alexander|   Hunold| AHUNOLD|590.423.4567|03-JAN-06|   IT_PROG|  9000|            - |       102|           60|        C|
+|        104|     Bruce|    Ernst|  BERNST|590.423.4568|21-MAY-07|   IT_PROG|  6000|            - |       103|           60|        C|
+|        105|     David|   Austin| DAUSTIN|590.423.4569|25-JUN-05|   IT_PROG|  4800|            - |       103|           60|        C|
+|        106|     Valli|Pataballa|VPATABAL|590.423.4560|05-FEB-06|   IT_PROG|  4800|            - |       103|           60|        C|
+|        107|     Diana|  Lorentz|DLORENTZ|590.423.5567|07-FEB-07|   IT_PROG|  4200|            - |       103|           60|        C|
+|        108|     Nancy|Greenberg|NGREENBE|515.124.4569|17-AUG-02|    FI_MGR| 12008|            - |       101|          100|        B|
+|        109|    Daniel|   Faviet| DFAVIET|515.124.4169|16-AUG-02|FI_ACCOUNT|  9000|            - |       108|          100|        C|
+|        110|      John|     Chen|   JCHEN|515.124.4269|28-SEP-05|FI_ACCOUNT|  8200|            - |       108|          100|        C|
++-----------+----------+---------+--------+------------+---------+----------+------+--------------+----------+-------------+---------+
+only showing top 20 rows
+
+>>> df = empdf.withColumn("emp_grade", when(col("salary")>=15000, "A").when((col("salary")>=10000) & (col("salary")<15000), "B").otherwise ("C"))
+
+>>> df.select("employee_id", "salary", "emp_grade").show()
++-----------+------+---------+
+|employee_id|salary|emp_grade|
++-----------+------+---------+
+|        198|  2600|        C|
+|        199|  2600|        C|
+|        200|  4400|        C|
+|        201| 13000|        B|
+|        202|  6000|        C|
+|        203|  6500|        C|
+|        204| 10000|        B|
+|        205| 12008|        B|
+|        206|  8300|        C|
+|        100| 24000|        A|
+|        101| 17000|        A|
+|        102| 17000|        A|
+|        103|  9000|        C|
+|        104|  6000|        C|
+|        105|  4800|        C|
+|        106|  4800|        C|
+|        107|  4200|        C|
+|        108| 12008|        B|
+|        109|  9000|        C|
+|        110|  8200|        C|
++-----------+------+---------+
+only showing top 20 rows
+
+### CONVERTING DATAFRAME TO SQL
+
+from pyspark.sql.functions import *
+empdf.createOrReplaceTempView("employee")
+ 
+>>> spark.sql("select * from employee").show()
++-----------+----------+---------+--------+------------+---------+----------+------+--------------+----------+-------------+
+|EMPLOYEE_ID|FIRST_NAME|LAST_NAME|   EMAIL|PHONE_NUMBER|HIRE_DATE|    JOB_ID|SALARY|COMMISSION_PCT|MANAGER_ID|DEPARTMENT_ID|
++-----------+----------+---------+--------+------------+---------+----------+------+--------------+----------+-------------+
+|        198|    Donald| OConnell|DOCONNEL|650.507.9833|21-JUN-07|  SH_CLERK|  2600|            - |       124|           50|
+|        199|   Douglas|    Grant|  DGRANT|650.507.9844|13-JAN-08|  SH_CLERK|  2600|            - |       124|           50|
+|        200|  Jennifer|   Whalen| JWHALEN|515.123.4444|17-SEP-03|   AD_ASST|  4400|            - |       101|           10|
+|        201|   Michael|Hartstein|MHARTSTE|515.123.5555|17-FEB-04|    MK_MAN| 13000|            - |       100|           20|
+|        202|       Pat|      Fay|    PFAY|603.123.6666|17-AUG-05|    MK_REP|  6000|            - |       201|           20|
+|        203|     Susan|   Mavris| SMAVRIS|515.123.7777|07-JUN-02|    HR_REP|  6500|            - |       101|           40|
+|        204|   Hermann|     Baer|   HBAER|515.123.8888|07-JUN-02|    PR_REP| 10000|            - |       101|           70|
+|        205|   Shelley|  Higgins|SHIGGINS|515.123.8080|07-JUN-02|    AC_MGR| 12008|            - |       101|          110|
+|        206|   William|    Gietz|  WGIETZ|515.123.8181|07-JUN-02|AC_ACCOUNT|  8300|            - |       205|          110|
+|        100|    Steven|     King|   SKING|515.123.4567|17-JUN-03|   AD_PRES| 24000|            - |        - |           90|
+|        101|     Neena|  Kochhar|NKOCHHAR|515.123.4568|21-SEP-05|     AD_VP| 17000|            - |       100|           90|
+|        102|       Lex|  De Haan| LDEHAAN|515.123.4569|13-JAN-01|     AD_VP| 17000|            - |       100|           90|
+|        103| Alexander|   Hunold| AHUNOLD|590.423.4567|03-JAN-06|   IT_PROG|  9000|            - |       102|           60|
+|        104|     Bruce|    Ernst|  BERNST|590.423.4568|21-MAY-07|   IT_PROG|  6000|            - |       103|           60|
+|        105|     David|   Austin| DAUSTIN|590.423.4569|25-JUN-05|   IT_PROG|  4800|            - |       103|           60|
+|        106|     Valli|Pataballa|VPATABAL|590.423.4560|05-FEB-06|   IT_PROG|  4800|            - |       103|           60|
+|        107|     Diana|  Lorentz|DLORENTZ|590.423.5567|07-FEB-07|   IT_PROG|  4200|            - |       103|           60|
+|        108|     Nancy|Greenberg|NGREENBE|515.124.4569|17-AUG-02|    FI_MGR| 12008|            - |       101|          100|
+|        109|    Daniel|   Faviet| DFAVIET|515.124.4169|16-AUG-02|FI_ACCOUNT|  9000|            - |       108|          100|
+|        110|      John|     Chen|   JCHEN|515.124.4269|28-SEP-05|FI_ACCOUNT|  8200|            - |       108|          100|
++-----------+----------+---------+--------+------------+---------+----------+------+--------------+----------+-------------+
+only showing top 20 rows
+
+>>> spark.sql("select employee_id, department_id, salary from employee limit 10").show()
++-----------+-------------+------+
+|employee_id|department_id|salary|
++-----------+-------------+------+
+|        198|           50|  2600|
+|        199|           50|  2600|
+|        200|           10|  4400|
+|        201|           20| 13000|
+|        202|           20|  6000|
+|        203|           40|  6500|
+|        204|           70| 10000|
+|        205|          110| 12008|
+|        206|          110|  8300|
+|        100|           90| 24000|
++-----------+-------------+------+
+
+>>> spark.sql("select employee_id, department_id, salary from employee limit 10").show(5)
++-----------+-------------+------+
+|employee_id|department_id|salary|
++-----------+-------------+------+
+|        198|           50|  2600|
+|        199|           50|  2600|
+|        200|           10|  4400|
+|        201|           20| 13000|
+|        202|           20|  6000|
++-----------+-------------+------+
+only showing top 5 rows
+
+>>> spark.sql("select department_id, sum(salary) as tot_salary from employee group by department_id").show()
++-------------+----------+
+|department_id|tot_salary|
++-------------+----------+
+|           20|     19000|
+|           40|      6500|
+|          100|     51608|
+|           10|      4400|
+|           50|     85600|
+|           70|     10000|
+|           90|     58000|
+|           60|     28800|
+|          110|     20308|
+|           30|     24900|
++-------------+----------+
+
+
+
+
+
 
